@@ -1,3 +1,4 @@
+<pre>
 smartstrace v1.6.9
 =====================================
 
@@ -100,3 +101,4 @@ Tip: Run --info for a guided overview with scenario-based examples.
      Run --sum-logs=PATH to summarize previously captured log files.
 
 =====================================
+</pre>
