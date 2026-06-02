@@ -1,93 +1,102 @@
-# smart-strace
+smartstrace v1.6.9
+=====================================
 
+USAGE:
+  smartstrace [options] [strace flags]
 
+SCRIPT FLAGS:
+-------------------------------------
+  --alert-cpu        Print a live alert when a traced process has CPU% above N
+  --alert-errors     Print a live alert when any PID's error count exceeds N
+  --auto-profile     Detect running services and auto-select relevant profiles
+  --change-log       Show version history
+  --context          Number of strace lines to capture as context around each error (default: 3)
+  --context-only     Print strace context blocks directly in terminal output under each PID section; no log flags required
+  --csf              Check CSF firewall status and correlate with traced connection errors
+  --exclude-profile  Exclude one or more profiles from the active set (comma-separated)
+  --full             Show full changelog history (used with --change-log)
+  --help             Display help information
+  --incident-mode    Comprehensive 60-second capture: health check, all profiles, auto-logging (top 10 PIDs)
+  --info             Show a guided overview of smartstrace with use-case examples for sysadmins and analysts
+  --json-only        Suppress human output; print a single JSON object when tracing ends
+  --json-stream      Stream one JSON line per event to stdout as tracing runs (NDJSON)
+  --log              Enable structured logging to /var/log/smartstrace-logs/YYYY/MM/DD/HH/
+  --min-errors       Only show PIDs with at least N total errors in terminal output (log always gets all)
+  --no-color         Disable ANSI color output (color is auto-enabled when stdout is a TTY)
+  --profile          Run one or more analysis profiles (comma-separated)
+  --profile-check    Check availability of each profile and exit (no tracing)
+  --quick            Quick 2-second scan, top process only, brief output
+  --report           Write a structured human-readable report to /var/log/smartstrace-logs/
+  --run              Continuous monitoring mode (no timeout)
+  --segs             Focus on segmentation fault detection; summarize SIGSEGV events
+  --service          Trace processes by service name (comma-separated for multiple)
+  --similar          After tracing, group PIDs with similar syscall fingerprints
+  --status           System health check + short analysis across all profiles (top 5 PIDs)
+  --sum-logs         Recursively scan a directory and produce a structured summary of strace output.
+  Accepts smartstrace log files (named <mode>.<user>.<pid>.<timestamp>) and raw
+  strace output files (e.g. from strace -ff -o prefix). Format is auto-detected
+  from file content. Output sections: RUN COMPARISON, PROCESS ANALYSIS SUMMARY,
+  CROSS-RUN PATTERNS. Standalone flag -- cannot be combined with tracing flags.
+  --top              Set max processes shown in analysis output (default: 5, or 10 for --incident-mode)
+  --user             Trace processes owned by one or more users (comma-separated)
+  --watch            Print a live alert when any strace line matches PATTERN (implies --run unless --quick/--incident-mode/--status is set)
+  --watch-cooldown   Seconds between repeated --watch alerts for the same PID (default: 30)
 
-## Getting started
+PROFILES:
+-------------------------------------
+  cron       Cron daemon tracing  [targets: pgrep -x crond (or pgrep -x cron)]
+  fpm        PHP-FPM worker tracing  [targets: pgrep -f php-fpm]
+  io         Disk / file I/O tracing  [targets: top-N by CPU (filtered to file+desc syscalls)]
+  mysql      MySQL tracing  [targets: pgrep -x mysqld]
+  network    Network diagnostics  [targets: top-N by CPU (filtered to network syscalls)]
+  nginx      Nginx worker tracing  [targets: pgrep -x nginx]
+  node       Node.js process tracing  [targets: pgrep -x node]
+  php        PHP application tracing  [targets: pgrep -f php]
+  redis      Redis server tracing  [targets: pgrep -x redis-server]
+  user       User activity tracing  [targets: top-N by CPU (all users) or pgrep -u <user> when --user is given]
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+STRACE FLAGS:
+-------------------------------------
+  -T            Show syscall duration
+  -e            Trace specific syscalls (e.g. -e trace=network)
+  -f            Follow processes
+  -ff           Follow forks (separate output per PID)
+  -o            Write output to file
+  -s            String size (e.g. -s4096)
+  -t            Timestamps
+  -tt           High precision timestamps
+  -v            Verbose output
+  -vv           Very verbose output
+  -y            File descriptor paths
+  -yy           Extended descriptor decoding
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Notes:
+  Flags can be combined (e.g. -Ttt, -ff)
+  Some flags require values (-e, -s, -o)
 
-## Add your files
+Examples:
+  smartstrace --quick
+  smartstrace --status
+  smartstrace --status --top=10
+  smartstrace --incident-mode
+  smartstrace --incident-mode --top=20
+  smartstrace --profile=network,php
+  smartstrace --profile=all                   (all profiles)
+  smartstrace --profile=all --exclude-profile=cron,redis
+  smartstrace --profile=user                  (all users, grouped)
+  smartstrace --profile=user --user=apache    (apache only)
+  smartstrace --service=httpd,nginx
+  smartstrace --service=all                   (all services)
+  smartstrace --auto-profile
+  smartstrace --json-only --status
+  smartstrace --alert-errors=10 --alert-cpu=80 --run
+  smartstrace --min-errors=5 --incident-mode
+  smartstrace --context-only --quick
+  smartstrace --context=5 --context-only --profile=php
+  smartstrace --segs --csf --report
+  smartstrace --sum-logs=/var/log/smartstrace-logs/2026/05/22
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+Tip: Run --info for a guided overview with scenario-based examples.
+     Run --sum-logs=PATH to summarize previously captured log files.
 
-```
-cd existing_repo
-git remote add origin https://git.cpanel.net/ts/smart-strace.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://git.cpanel.net/ts/smart-strace/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+=====================================
