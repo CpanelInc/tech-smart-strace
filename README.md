@@ -1,5 +1,5 @@
 <pre>
-smartstrace v1.6.9
+smartstrace v1.6.9x
 =====================================
 
 USAGE:
